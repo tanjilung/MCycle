@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const hasValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   async function passwordLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,6 +34,11 @@ export default function LoginPage() {
 
   async function passkeyLogin() {
     setMessage("");
+
+    if (!hasValidEmail) {
+      setMessage("Enter a valid account email before using passkey login");
+      return;
+    }
 
     try {
       const optionsResponse = await fetch("/api/auth/passkey/login/options", {
@@ -109,7 +115,8 @@ export default function LoginPage() {
       <button
         type="button"
         onClick={passkeyLogin}
-        className="mt-3 w-full rounded-full border border-black/20 py-2 text-sm font-medium"
+        disabled={!hasValidEmail}
+        className="mt-3 w-full rounded-full border border-black/20 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
       >
         Login with biometric passkey
       </button>

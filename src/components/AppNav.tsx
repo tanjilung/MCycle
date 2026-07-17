@@ -31,7 +31,7 @@ export function AppNav() {
               href={link.href}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 active
-                  ? "bg-black text-white"
+                  ? "bg-sky-200 text-sky-900"
                   : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
               }`}
             >
