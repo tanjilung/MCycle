@@ -128,12 +128,12 @@ export function CalendarPageClient({ year, month }: Props) {
       ) : null}
 
       <section className="space-y-3 rounded-3xl bg-white/85 p-4 shadow-lg">
-        <h3 className="text-lg font-semibold">Recent cycles</h3>
+        <h3 className="text-lg font-semibold">Cycle history</h3>
         {cycles.length === 0 ? (
           <p className="text-zinc-600">No cycles yet. Pick a start date above.</p>
         ) : (
           <ul className="space-y-2">
-            {cycles.slice(0, 8).map((cycle) => (
+            {cycles.map((cycle) => (
               <li key={cycle.id} className="flex items-center justify-between rounded-xl border border-black/10 p-3">
                 <span className="text-sm text-zinc-700">Start: {cycle.menstruationStartDate.slice(0, 10)}</span>
                 <Link href={`/app/cycles/${cycle.id}`} className="text-sm font-medium text-black underline-offset-2 hover:underline">

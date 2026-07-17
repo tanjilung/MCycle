@@ -1,4 +1,4 @@
-import { addMonths, endOfMonth, format, parse, startOfMonth } from "date-fns";
+import { endOfMonth, format, parse, startOfMonth } from "date-fns";
 import { z } from "zod";
 import { fail, ok } from "@/lib/api";
 import { getCurrentUserId } from "@/lib/auth/session";
@@ -30,15 +30,11 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const { month, start, end } = getMonthRange(searchParams.get("month"));
+  const { month } = getMonthRange(searchParams.get("month"));
 
   const cycles = await prisma.cycleInstance.findMany({
     where: {
       userId,
-      menstruationStartDate: {
-        gte: addMonths(start, -1),
-        lte: addMonths(end, 1),
-      },
     },
     include: {
       phases: true,
