@@ -147,12 +147,12 @@ export default function CycleDefaultsPage() {
                 className="mt-1 w-full rounded-xl border border-black/15 px-3 py-2"
               />
             </label>
+
+            <p className="rounded-xl bg-zinc-100 p-3 text-sm">
+              Follicular phase (calculated): <strong>{follicularDays}</strong> days
+            </p>
           </>
         ) : null}
-
-        <p className="rounded-xl bg-zinc-100 p-3 text-sm">
-          Follicular phase (calculated): <strong>{follicularDays}</strong> days
-        </p>
 
         <button
           type="submit"
