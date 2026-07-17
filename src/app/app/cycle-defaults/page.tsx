@@ -19,6 +19,7 @@ const initialDefaults: Defaults = {
 export default function CycleDefaultsPage() {
   const [defaults, setDefaults] = useState<Defaults>(initialDefaults);
   const [message, setMessage] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -109,33 +110,45 @@ export default function CycleDefaultsPage() {
           />
         </label>
 
-        <label className="text-sm">
-          Ovulation days
-          <input
-            type="number"
-            min={1}
-            max={5}
-            value={defaults.ovulationDays}
-            onChange={(event) =>
-              setDefaults((prev) => ({ ...prev, ovulationDays: Number(event.target.value) }))
-            }
-            className="mt-1 w-full rounded-xl border border-black/15 px-3 py-2"
-          />
-        </label>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="text-sm font-medium text-zinc-500 underline-offset-2 hover:underline text-left"
+        >
+          {showAdvanced ? "Hide advanced settings ▲" : "Show advanced settings ▼"}
+        </button>
 
-        <label className="text-sm">
-          Luteal days
-          <input
-            type="number"
-            min={7}
-            max={20}
-            value={defaults.lutealDays}
-            onChange={(event) =>
-              setDefaults((prev) => ({ ...prev, lutealDays: Number(event.target.value) }))
-            }
-            className="mt-1 w-full rounded-xl border border-black/15 px-3 py-2"
-          />
-        </label>
+        {showAdvanced ? (
+          <>
+            <label className="text-sm">
+              Ovulation days
+              <input
+                type="number"
+                min={1}
+                max={5}
+                value={defaults.ovulationDays}
+                onChange={(event) =>
+                  setDefaults((prev) => ({ ...prev, ovulationDays: Number(event.target.value) }))
+                }
+                className="mt-1 w-full rounded-xl border border-black/15 px-3 py-2"
+              />
+            </label>
+
+            <label className="text-sm">
+              Luteal days
+              <input
+                type="number"
+                min={7}
+                max={20}
+                value={defaults.lutealDays}
+                onChange={(event) =>
+                  setDefaults((prev) => ({ ...prev, lutealDays: Number(event.target.value) }))
+                }
+                className="mt-1 w-full rounded-xl border border-black/15 px-3 py-2"
+              />
+            </label>
+          </>
+        ) : null}
 
         <p className="rounded-xl bg-zinc-100 p-3 text-sm">
           Follicular phase (calculated): <strong>{follicularDays}</strong> days
