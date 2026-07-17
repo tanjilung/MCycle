@@ -89,6 +89,18 @@ export async function POST(request: Request) {
 
   const menstruationStartDate = parseDateInput(parsed.data.menstruationStartDate);
 
+  const monthStart = startOfMonth(menstruationStartDate);
+  const monthEnd = endOfMonth(menstruationStartDate);
+  const existing = await prisma.cycleInstance.findFirst({
+    where: {
+      userId,
+      menstruationStartDate: { gte: monthStart, lte: monthEnd },
+    },
+  });
+  if (existing) {
+    return fail("A cycle already exists for this month", 409);
+  }
+
   const prediction = calculateCyclePrediction(menstruationStartDate, {
     cycleLengthDays: defaults.cycleLengthDays,
     menstruationDays: defaults.menstruationDays,
