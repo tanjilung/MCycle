@@ -121,30 +121,56 @@ export function PhaseEditor({ cycleId, phases, cycleDefaults, onUpdated }: Props
     onUpdated();
   }
 
-  async function updatePhase(
+  async function patchPhase(
     phaseId: string,
     startDate: string,
     endDate: string,
     applyMode: "THIS_CYCLE" | "FUTURE",
-  ) {
-    setLoadingId(phaseId);
-    setMessage("");
-
+  ): Promise<{ ok: boolean; error?: string }> {
     const response = await fetch(`/api/cycles/${cycleId}/phases/${phaseId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ startDate, endDate, applyMode }),
     });
+    return response.json() as Promise<{ ok: boolean; error?: string }>;
+  }
 
-    const data = (await response.json()) as { ok: boolean; error?: string };
+  async function updatePhase(
+    phaseId: string,
+    startDate: string,
+    endDate: string,
+    applyMode: "THIS_CYCLE" | "FUTURE",
+    isMenstruation: boolean,
+  ) {
+    setLoadingId(phaseId);
+    setMessage("");
 
-    if (!response.ok || !data.ok) {
-      setMessage(data.error ?? "Could not update phase");
-      setLoadingId(null);
-      return;
+    if (isMenstruation && cycleDefaults) {
+      // Save all phases together using the recalculated dates
+      const recalc = recalcPhaseDates(startDate, cycleDefaults);
+      const results = await Promise.all(
+        phases.map((p) => {
+          const d = recalc[p.phaseType] ?? dates[p.id];
+          return patchPhase(p.id, d.startDate, d.endDate, applyMode);
+        }),
+      );
+      const failed = results.find((r) => !r.ok);
+      if (failed) {
+        setMessage(failed.error ?? "Could not update phases");
+        setLoadingId(null);
+        return;
+      }
+      setMessage("All phases updated");
+    } else {
+      const data = await patchPhase(phaseId, startDate, endDate, applyMode);
+      if (!data.ok) {
+        setMessage(data.error ?? "Could not update phase");
+        setLoadingId(null);
+        return;
+      }
+      setMessage("Phase updated");
     }
 
-    setMessage("Phase updated");
     setLoadingId(null);
     onUpdated();
   }
@@ -166,7 +192,7 @@ export function PhaseEditor({ cycleId, phases, cycleDefaults, onUpdated }: Props
           const applyMode = (new FormData(event.currentTarget).get("applyMode") ?? "THIS_CYCLE") as
             | "THIS_CYCLE"
             | "FUTURE";
-          updatePhase(phase.id, d.startDate, d.endDate, applyMode);
+          updatePhase(phase.id, d.startDate, d.endDate, applyMode, isMenstruation);
         }}
       >
         <div>
