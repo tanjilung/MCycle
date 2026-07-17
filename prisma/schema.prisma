@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PhaseType {
+  MENSTRUATION
+  FOLLICULAR
+  OVULATION
+  LUTEAL
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  CYCLE_CREATED
+  CYCLE_UPDATED
+  CYCLE_DEFAULTS_UPDATED
+  PHASE_UPDATED
+  DATA_EXPORTED
+  ACCOUNT_DELETED
+}
+
+model User {
+  id            String           @id @default(cuid())
+  email         String           @unique
+  name          String
+  passwordHash  String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  sessions      AuthSession[]
+  passkeys      PasskeyCredential[]
+  cycleDefaults CycleDefaults?
+  cycles        CycleInstance[]
+  auditLogs     AuditLog[]
+}
+
+model AuthSession {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model PasskeyCredential {
+  id            String   @id @default(cuid())
+  userId        String
+  credentialId  Bytes    @unique
+  publicKey     Bytes
+  counter       Int      @default(0)
+  transports    Json?
+  deviceName    String?
+  createdAt     DateTime @default(now())
+  lastUsedAt    DateTime?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model CycleDefaults {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  cycleLengthDays  Int      @default(28)
+  menstruationDays Int      @default(5)
+  ovulationDays    Int      @default(1)
+  lutealDays       Int      @default(14)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CycleInstance {
+  id                    String   @id @default(cuid())
+  userId                String
+  menstruationStartDate DateTime
+  cycleLengthDays       Int
+  menstruationDays      Int
+  ovulationDays         Int
+  lutealDays            Int
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phases                Phase[]
+
+  @@index([userId, menstruationStartDate])
+}
+
+model Phase {
+  id              String    @id @default(cuid())
+  cycleInstanceId String
+  phaseType       PhaseType
+  startDate       DateTime
+  endDate         DateTime
+  isEdited        Boolean   @default(false)
+  notes           String?
+  cycleInstance   CycleInstance @relation(fields: [cycleInstanceId], references: [id], onDelete: Cascade)
+
+  @@index([cycleInstanceId, phaseType])
+}
+
+model AuditLog {
+  id        String     @id @default(cuid())
+  userId    String
+  action    AuditAction
+  metadata  Json?
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
