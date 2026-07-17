@@ -23,7 +23,7 @@ export default function Home() {
               href="/login"
               className="rounded-full border border-black/20 bg-white px-6 py-3 text-sm font-medium"
             >
-              Login with passkey
+              Login to your account
             </Link>
           </div>
         </div>
@@ -31,7 +31,7 @@ export default function Home() {
         <div className="rounded-3xl bg-white/85 p-5 shadow-lg">
           <h2 className="text-xl font-semibold">Core Features</h2>
           <ul className="mt-3 space-y-2 text-sm text-zinc-700">
-            <li>Biometric passkey authentication with password fallback</li>
+            <li>Secure account authentication with email and password</li>
             <li>Persistent PostgreSQL database</li>
             <li>Monthly cycle calendar with phase and prediction highlights</li>
             <li>Editable defaults for cycle and phase durations</li>

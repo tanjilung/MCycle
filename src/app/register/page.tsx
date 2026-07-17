@@ -1,6 +1,5 @@
 "use client";
 
-import { startRegistration } from "@simplewebauthn/browser";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
@@ -28,53 +27,14 @@ export default function RegisterPage() {
       return;
     }
 
-    try {
-      const optionsResponse = await fetch("/api/auth/passkey/register/options", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      const optionsPayload = (await optionsResponse.json()) as {
-        ok: boolean;
-        data?: Parameters<typeof startRegistration>[0]["optionsJSON"];
-        error?: string;
-      };
-
-      if (!optionsResponse.ok || !optionsPayload.ok || !optionsPayload.data) {
-        setMessage(optionsPayload.error ?? "Registered, but could not start passkey setup");
-        router.push("/login");
-        return;
-      }
-
-      const registration = await startRegistration({ optionsJSON: optionsPayload.data });
-
-      const verifyResponse = await fetch("/api/auth/passkey/register/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, response: registration }),
-      });
-
-      const verifyPayload = (await verifyResponse.json()) as { ok: boolean; error?: string };
-
-      if (!verifyResponse.ok || !verifyPayload.ok) {
-        setMessage(verifyPayload.error ?? "Passkey setup failed. You can still login with password.");
-        router.push("/login");
-        return;
-      }
-
-      setMessage("Account and passkey created. You can login now.");
-      router.push("/login");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Passkey setup failed");
-      router.push("/login");
-    }
+    setMessage("Account created. You can login now.");
+    router.push("/login");
   }
 
   return (
     <div className="mx-auto mt-16 w-full max-w-md rounded-3xl bg-white/90 p-6 shadow-xl">
       <h1 className="text-2xl font-semibold">Create your MCycle account</h1>
-      <p className="mt-2 text-sm text-zinc-700">Register with password and add biometric passkey.</p>
+      <p className="mt-2 text-sm text-zinc-700">Register with your name, email, and password.</p>
 
       <form className="mt-5 space-y-3" onSubmit={register}>
         <label className="block text-sm">
@@ -112,7 +72,7 @@ export default function RegisterPage() {
         </label>
 
         <button type="submit" className="w-full rounded-full bg-black py-2 text-sm font-medium text-white">
-          Register and setup passkey
+          Register
         </button>
       </form>
 

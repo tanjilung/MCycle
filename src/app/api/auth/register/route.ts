@@ -6,7 +6,7 @@ import { hashPassword } from "@/lib/auth/password";
 const registerSchema = z.object({
   email: z.email(),
   name: z.string().min(1).max(120),
-  password: z.string().min(8).max(200).optional(),
+  password: z.string().min(8).max(200),
 });
 
 export async function POST(request: Request) {
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return fail("Email is already registered", 409);
   }
 
-  const passwordHash = password ? await hashPassword(password) : null;
+  const passwordHash = await hashPassword(password);
 
   const user = await prisma.user.create({
     data: {
@@ -42,9 +42,7 @@ export async function POST(request: Request) {
       auditLogs: {
         create: {
           action: "REGISTER",
-          metadata: {
-            hasPassword: Boolean(passwordHash),
-          },
+          metadata: { hasPassword: true },
         },
       },
     },

@@ -12,14 +12,6 @@ export async function POST() {
     where: { id: userId },
     include: {
       cycleDefaults: true,
-      passkeys: {
-        select: {
-          id: true,
-          deviceName: true,
-          createdAt: true,
-          lastUsedAt: true,
-        },
-      },
       cycles: {
         include: {
           phases: true,

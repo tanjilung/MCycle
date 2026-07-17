@@ -18,7 +18,6 @@ export async function GET() {
       cycleDefaults: true,
       _count: {
         select: {
-          passkeys: true,
           cycles: true,
         },
       },

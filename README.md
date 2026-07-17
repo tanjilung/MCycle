@@ -2,7 +2,6 @@
 
 Menstrual cycle tracking web app with:
 - Account registration and login
-- Biometric login via passkeys (WebAuthn) with password fallback
 - Persistent PostgreSQL storage
 - Monthly calendar view
 - Editable cycle defaults
@@ -13,7 +12,6 @@ Menstrual cycle tracking web app with:
 
 - Next.js (App Router) + TypeScript
 - Prisma ORM + PostgreSQL
-- WebAuthn using `@simplewebauthn/server` and `@simplewebauthn/browser`
 
 ## Local Setup
 
@@ -67,13 +65,11 @@ npm run test:e2e
 ## Environment Variables
 
 - `DATABASE_URL`: Postgres connection string
-- `WEBAUTHN_RP_ID`: relying party id, usually `localhost` for local dev
-- `WEBAUTHN_ORIGIN`: app origin, usually `http://localhost:3000` for local dev
 
 ## Main App Routes
 
-- `/register`: account creation + passkey enrollment
-- `/login`: passkey login or password fallback
+- `/register`: account creation
+- `/login`: account login
 - `/app/dashboard`: authenticated dashboard
 - `/app/calendar/[year]/[month]`: monthly calendar and predictions
 - `/app/cycle-defaults`: edit cycle defaults
@@ -84,10 +80,6 @@ npm run test:e2e
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
-- `POST /api/auth/passkey/register/options`
-- `POST /api/auth/passkey/register/verify`
-- `POST /api/auth/passkey/login/options`
-- `POST /api/auth/passkey/login/verify`
 - `GET/PATCH /api/cycle-defaults`
 - `GET/POST /api/cycles`
 - `GET/PATCH/DELETE /api/cycles/:id`
@@ -111,8 +103,6 @@ This repo is packaged for Railway with [railway.toml](railway.toml).
 Set these environment variables:
 
 - `DATABASE_URL`: use Railway Postgres connection string (injected automatically when linked, or paste manually)
-- `WEBAUTHN_ORIGIN`: your public app URL, for example `https://your-app.up.railway.app`
-- `WEBAUTHN_RP_ID`: hostname only from `WEBAUTHN_ORIGIN`, for example `your-app.up.railway.app`
 
 ### 3. Build and start behavior
 
@@ -139,4 +129,3 @@ npm run prisma:migrate:deploy
 ## Notes
 
 - This app is for tracking support and prediction. It is not medical advice.
-- WebAuthn support depends on browser/device capability.

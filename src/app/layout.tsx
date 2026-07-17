@@ -15,7 +15,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "MCycle",
-  description: "Menstrual cycle tracking with biometric login and monthly predictions",
+  description: "Menstrual cycle tracking with secure login and monthly predictions",
 };
 
 export default function RootLayout({
