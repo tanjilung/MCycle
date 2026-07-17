@@ -95,13 +95,46 @@ npm run test:e2e
 - `POST /api/user/export`
 - `POST /api/user/delete`
 
-## Deployment
+## Deployment on Railway
 
-The app is ready for Vercel + managed Postgres deployment.
+This repo is packaged for Railway with [railway.toml](railway.toml).
 
-1. Add environment variables in your deployment platform.
-2. Run migrations in your deployment pipeline before serving traffic.
-3. Set `WEBAUTHN_RP_ID` and `WEBAUTHN_ORIGIN` to your production domain.
+### 1. Create Railway services
+
+1. Create a new Railway project.
+2. Add a PostgreSQL service.
+3. Add a web service from this GitHub repo.
+4. Link the web service to the PostgreSQL service.
+
+### 2. Configure variables in the web service
+
+Set these environment variables:
+
+- `DATABASE_URL`: use Railway Postgres connection string (injected automatically when linked, or paste manually)
+- `WEBAUTHN_ORIGIN`: your public app URL, for example `https://your-app.up.railway.app`
+- `WEBAUTHN_RP_ID`: hostname only from `WEBAUTHN_ORIGIN`, for example `your-app.up.railway.app`
+
+### 3. Build and start behavior
+
+Railway uses these commands from `railway.toml`:
+
+- Build: `npm ci && npm run build:railway`
+- Start: `npm run start:railway`
+
+`start:railway` runs Prisma migrations before boot:
+
+- `prisma migrate deploy`
+- `next start -p ${PORT:-3000}`
+
+### 4. Deploy
+
+Push to your connected branch. Railway will build, run migrations, and start the app.
+
+If you need to run migration deploy manually in a Railway shell:
+
+```bash
+npm run prisma:migrate:deploy
+```
 
 ## Notes
 
