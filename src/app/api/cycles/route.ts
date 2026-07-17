@@ -47,14 +47,33 @@ export async function GET(request: Request) {
   const latest = cycles[0];
   const defaults = await prisma.cycleDefaults.findUnique({ where: { userId } });
 
-  const prediction = latest && defaults
-    ? calculateCyclePrediction(latest.menstruationStartDate, {
+  let prediction: { nextOvulation: string; nextMenstruation: string } | null = null;
+  if (latest && defaults) {
+    const lutealPhase = latest.phases.find((p) => p.phaseType === "LUTEAL");
+    const ovulationPhase = latest.phases.find((p) => p.phaseType === "OVULATION");
+
+    if (lutealPhase && ovulationPhase) {
+      // Use actual edited phase dates so edits are reflected immediately
+      const nextMenstruationDate = new Date(lutealPhase.endDate);
+      nextMenstruationDate.setUTCDate(nextMenstruationDate.getUTCDate() + 1);
+      prediction = {
+        nextOvulation: ovulationPhase.startDate.toISOString(),
+        nextMenstruation: nextMenstruationDate.toISOString(),
+      };
+    } else {
+      // Fallback: calculate from defaults
+      const calc = calculateCyclePrediction(latest.menstruationStartDate, {
         cycleLengthDays: defaults.cycleLengthDays,
         menstruationDays: defaults.menstruationDays,
         ovulationDays: defaults.ovulationDays,
         lutealDays: defaults.lutealDays,
-      })
-    : null;
+      });
+      prediction = {
+        nextOvulation: calc.nextOvulation.toISOString(),
+        nextMenstruation: calc.nextMenstruation.toISOString(),
+      };
+    }
+  }
 
   return ok({
     month,
