@@ -61,11 +61,11 @@ function parseCredentialIdCandidates(raw: string): Buffer[] {
   return [...values.values()];
 }
 
-function findMatchingAuthenticator(
-  credentials: Array<{ id: string; credentialId: Uint8Array; userId: string }>,
+function findMatchingAuthenticator<T extends { credentialId: Uint8Array }>(
+  credentials: T[],
   rawAssertionId: string,
   candidates: Buffer[],
-) {
+): T | undefined {
   return credentials.find((cred) => {
     const storedBytes = Buffer.from(cred.credentialId);
     const storedUtf8 = storedBytes.toString("utf8");
