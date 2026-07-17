@@ -15,10 +15,13 @@ export default async function CycleDetailPage({ params }: Props) {
 
   const { id } = await params;
 
-  const cycle = await prisma.cycleInstance.findFirst({
-    where: { id, userId },
-    include: { phases: true },
-  });
+  const [cycle, defaults] = await Promise.all([
+    prisma.cycleInstance.findFirst({
+      where: { id, userId },
+      include: { phases: true },
+    }),
+    prisma.cycleDefaults.findUnique({ where: { userId } }),
+  ]);
 
   if (!cycle) {
     notFound();
@@ -41,6 +44,12 @@ export default async function CycleDetailPage({ params }: Props) {
             isEdited: phase.isEdited,
           })),
         }}
+        cycleDefaults={defaults ? {
+          cycleLengthDays: defaults.cycleLengthDays,
+          menstruationDays: defaults.menstruationDays,
+          ovulationDays: defaults.ovulationDays,
+          lutealDays: defaults.lutealDays,
+        } : null}
       />
     </div>
   );

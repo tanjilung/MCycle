@@ -19,11 +19,19 @@ type Cycle = {
   phases: Phase[];
 };
 
-type Props = {
-  initialCycle: Cycle;
+type CycleDefaults = {
+  cycleLengthDays: number;
+  menstruationDays: number;
+  ovulationDays: number;
+  lutealDays: number;
 };
 
-export function CycleDetailClient({ initialCycle }: Props) {
+type Props = {
+  initialCycle: Cycle;
+  cycleDefaults: CycleDefaults | null;
+};
+
+export function CycleDetailClient({ initialCycle, cycleDefaults }: Props) {
   const router = useRouter();
   const [cycle, setCycle] = useState(initialCycle);
   const [notes, setNotes] = useState(initialCycle.notes ?? "");
@@ -90,7 +98,12 @@ export function CycleDetailClient({ initialCycle }: Props) {
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Edit phase windows</h2>
-        <PhaseEditor cycleId={cycle.id} phases={cycle.phases} onUpdated={refresh} />
+        <PhaseEditor
+          cycleId={cycle.id}
+          phases={cycle.phases}
+          cycleDefaults={cycleDefaults}
+          onUpdated={refresh}
+        />
       </section>
 
       <section className="rounded-2xl border border-red-200 bg-red-50 p-4">
