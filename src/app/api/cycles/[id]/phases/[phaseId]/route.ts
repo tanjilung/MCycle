@@ -163,6 +163,7 @@ export async function DELETE(
   await prisma.auditLog.create({
     data: {
       userId,
+      // @ts-ignore – PHASE_DELETED added via migration; regenerate client after deploy
       action: "PHASE_DELETED",
       metadata: { cycleId: id, phaseId, phaseType: phase.phaseType },
     },

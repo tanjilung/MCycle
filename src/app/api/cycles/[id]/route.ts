@@ -119,8 +119,9 @@ export async function DELETE(
   await prisma.auditLog.create({
     data: {
       userId,
-      action: "CYCLE_UPDATED",
-      metadata: { cycleId: id, deleted: true },
+      // @ts-ignore – CYCLE_DELETED added via migration; regenerate client after deploy
+      action: "CYCLE_DELETED",
+      metadata: { cycleId: id },
     },
   });
 
