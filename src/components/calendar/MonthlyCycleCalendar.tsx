@@ -25,6 +25,7 @@ type Props = {
   monthDate: Date;
   cycles: Cycle[];
   prediction: Prediction;
+  existingCycleId: string | null;
   onSetStartDate: (dateISO: string) => Promise<void>;
 };
 
@@ -37,6 +38,7 @@ export function MonthlyCycleCalendar({
   monthDate,
   cycles,
   prediction,
+  existingCycleId,
   onSetStartDate,
 }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -155,7 +157,7 @@ export function MonthlyCycleCalendar({
           disabled={!selectedDate || submitting}
           className="rounded-full bg-black px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Saving..." : "Set menstruation start"}
+          {submitting ? "Saving..." : existingCycleId ? "Update menstruation start" : "Set menstruation start"}
         </button>
       </div>
 

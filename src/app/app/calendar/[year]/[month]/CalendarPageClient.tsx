@@ -88,19 +88,36 @@ export function CalendarPageClient({ year, month }: Props) {
     };
   }, [month, year]);
 
+  const monthCycle = useMemo(() => {
+    const [y, m] = [`${year}`, `${month}`];
+    return cycles.find((c) => {
+      const d = c.menstruationStartDate.slice(0, 7); // "yyyy-MM"
+      return d === `${y}-${m}`;
+    }) ?? null;
+  }, [cycles, year, month]);
+
   async function onSetStartDate(dateISO: string) {
-    const response = await fetch("/api/cycles", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ menstruationStartDate: dateISO }),
-    });
+    let response: Response;
+
+    if (monthCycle) {
+      // Update existing cycle's menstruation start date
+      response = await fetch(`/api/cycles/${monthCycle.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menstruationStartDate: dateISO }),
+      });
+    } else {
+      // Create new cycle
+      response = await fetch("/api/cycles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menstruationStartDate: dateISO }),
+      });
+    }
 
     const data = (await response.json()) as { ok: boolean; error?: string };
-
     if (!response.ok || !data.ok) {
-      throw new Error(data.error ?? "Failed to create cycle");
+      throw new Error(data.error ?? "Failed to save cycle");
     }
 
     await loadData();
@@ -123,6 +140,7 @@ export function CalendarPageClient({ year, month }: Props) {
           monthDate={monthDate}
           cycles={cycles}
           prediction={prediction}
+          existingCycleId={monthCycle?.id ?? null}
           onSetStartDate={onSetStartDate}
         />
       ) : null}
