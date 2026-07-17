@@ -35,6 +35,64 @@ function assertChallenge(record: ChallengeRecord | undefined): ChallengeRecord {
   return record;
 }
 
+function parseCredentialIdCandidates(raw: string): Buffer[] {
+  const values = new Map<string, Buffer>();
+
+  const push = (buffer: Buffer) => {
+    if (buffer.length === 0) {
+      return;
+    }
+    values.set(buffer.toString("hex"), buffer);
+  };
+
+  if (!raw) {
+    return [];
+  }
+
+  push(Buffer.from(raw));
+  push(Buffer.from(raw, "base64url"));
+
+  try {
+    push(Buffer.from(raw, "base64"));
+  } catch {
+    // Ignore invalid base64 input.
+  }
+
+  return [...values.values()];
+}
+
+function findMatchingAuthenticator(
+  credentials: Array<{ id: string; credentialId: Uint8Array; userId: string }>,
+  rawAssertionId: string,
+  candidates: Buffer[],
+) {
+  return credentials.find((cred) => {
+    const storedBytes = Buffer.from(cred.credentialId);
+    const storedUtf8 = storedBytes.toString("utf8");
+
+    if (storedUtf8 === rawAssertionId) {
+      return true;
+    }
+
+    if (storedBytes.toString("base64url") === rawAssertionId) {
+      return true;
+    }
+
+    return candidates.some((candidate) => {
+      if (storedBytes.equals(candidate)) {
+        return true;
+      }
+
+      if (!storedUtf8) {
+        return false;
+      }
+
+      const repaired = Buffer.from(storedUtf8, "base64url");
+      return repaired.equals(candidate);
+    });
+  });
+}
+
 export async function getRegistrationOptions(userId: string, email: string) {
   const userCredentials = await prisma.passkeyCredential.findMany({
     where: { userId },
@@ -134,46 +192,45 @@ export async function verifyAuthentication(
   const record = assertChallenge(authenticationChallenges.get(userId));
 
   const rawId =
-    authenticationResponse && typeof authenticationResponse === "object" && "id" in authenticationResponse
-      ? (authenticationResponse as { id: string }).id
+    authenticationResponse && typeof authenticationResponse === "object"
+      ? (("rawId" in authenticationResponse
+          ? (authenticationResponse as { rawId?: string }).rawId
+          : undefined) ??
+        ("id" in authenticationResponse
+          ? (authenticationResponse as { id?: string }).id
+          : "") ??
+        "")
       : "";
 
-  const credentialId = rawId ? Buffer.from(rawId, "base64url") : Buffer.alloc(0);
-  const allCredentials = await prisma.passkeyCredential.findMany({
+  const candidates = parseCredentialIdCandidates(rawId);
+  const canonicalCredentialId = candidates.find((value) => value.length > 0) ?? Buffer.alloc(0);
+
+  const userCredentials = await prisma.passkeyCredential.findMany({
     where: { userId },
   });
 
-  const authenticator = allCredentials.find((cred) => {
-    const storedBytes = Buffer.from(cred.credentialId);
-    const storedAsBase64Url = storedBytes.toString("base64url");
-    const storedAsUtf8 = storedBytes.toString("utf8");
+  const authenticator = findMatchingAuthenticator(userCredentials, rawId, candidates);
 
-    if (storedBytes.equals(credentialId)) {
-      return true;
+  if (!authenticator) {
+    const globalCredentials = await prisma.passkeyCredential.findMany();
+    const credentialFromOtherAccount = findMatchingAuthenticator(globalCredentials, rawId, candidates);
+    if (credentialFromOtherAccount) {
+      throw new Error("Passkey belongs to a different account email");
     }
-
-    if (storedAsBase64Url === rawId || storedAsUtf8 === rawId) {
-      return true;
-    }
-
-    if (!storedAsUtf8) {
-      return false;
-    }
-
-    // Handles credentials that were saved as UTF-8 bytes of a base64url string.
-    const repaired = Buffer.from(storedAsUtf8, "base64url");
-    return repaired.equals(credentialId);
-  });
+  }
 
   if (!authenticator) {
     throw new Error("Unknown passkey credential");
   }
 
   // Repair credential IDs saved with older encodings so future lookups are consistent.
-  if (!Buffer.from(authenticator.credentialId).equals(credentialId) && credentialId.length > 0) {
+  if (
+    canonicalCredentialId.length > 0
+    && !Buffer.from(authenticator.credentialId).equals(canonicalCredentialId)
+  ) {
     await prisma.passkeyCredential.update({
       where: { id: authenticator.id },
-      data: { credentialId },
+      data: { credentialId: canonicalCredentialId },
     }).catch(() => {
       return;
     });
