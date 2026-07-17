@@ -84,11 +84,12 @@ export async function verifyRegistration(
 
   if (verification.verified && verification.registrationInfo) {
     const { credential } = verification.registrationInfo;
+    const credentialId = Buffer.from(credential.id, "base64url");
 
     await prisma.passkeyCredential.create({
       data: {
         userId,
-        credentialId: Buffer.from(credential.id),
+        credentialId,
         publicKey: Buffer.from(credential.publicKey),
         counter: credential.counter,
         transports: registrationResponse && typeof registrationResponse === "object" && "response" in registrationResponse
@@ -138,13 +139,27 @@ export async function verifyAuthentication(
       : "";
 
   const credentialId = rawId ? Buffer.from(rawId, "base64url") : Buffer.alloc(0);
+  const legacyCredentialId = rawId ? Buffer.from(rawId) : Buffer.alloc(0);
 
   const authenticator = await prisma.passkeyCredential.findFirst({
-    where: { userId, credentialId },
+    where: {
+      userId,
+      OR: [{ credentialId }, { credentialId: legacyCredentialId }],
+    },
   });
 
   if (!authenticator) {
     throw new Error("Unknown passkey credential");
+  }
+
+  // Repair credential IDs saved with older UTF-8 encoding so future lookups are consistent.
+  if (!Buffer.from(authenticator.credentialId).equals(credentialId)) {
+    await prisma.passkeyCredential.update({
+      where: { id: authenticator.id },
+      data: { credentialId },
+    }).catch(() => {
+      return;
+    });
   }
 
   const verification = await verifyAuthenticationResponse({
