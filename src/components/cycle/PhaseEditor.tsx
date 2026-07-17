@@ -22,7 +22,30 @@ function dateInputValue(value: string): string {
 
 export function PhaseEditor({ cycleId, phases, onUpdated }: Props) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
+
+  async function deletePhase(phaseId: string) {
+    if (!confirm("Delete this phase? This cannot be undone.")) return;
+    setDeletingId(phaseId);
+    setMessage("");
+
+    const response = await fetch(`/api/cycles/${cycleId}/phases/${phaseId}`, {
+      method: "DELETE",
+    });
+
+    const data = (await response.json()) as { ok: boolean; error?: string };
+
+    if (!response.ok || !data.ok) {
+      setMessage(data.error ?? "Could not delete phase");
+      setDeletingId(null);
+      return;
+    }
+
+    setMessage("Phase deleted");
+    setDeletingId(null);
+    onUpdated();
+  }
 
   async function updatePhase(
     phaseId: string,
@@ -110,6 +133,14 @@ export function PhaseEditor({ cycleId, phases, onUpdated }: Props) {
               className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
             >
               {loadingId === phase.id ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={() => deletePhase(phase.id)}
+              disabled={deletingId === phase.id}
+              className="rounded-xl border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            >
+              {deletingId === phase.id ? "Deleting..." : "Delete"}
             </button>
           </div>
         </form>

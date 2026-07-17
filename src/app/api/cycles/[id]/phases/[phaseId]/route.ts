@@ -132,3 +132,46 @@ export async function PATCH(
 
   return ok(updated);
 }
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ id: string; phaseId: string }> },
+) {
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    return fail("Unauthorized", 401);
+  }
+
+  const { id, phaseId } = await context.params;
+
+  const cycle = await prisma.cycleInstance.findFirst({
+    where: { id, userId },
+    include: { phases: true },
+  });
+
+  if (!cycle) {
+    return fail("Cycle not found", 404);
+  }
+
+  const phase = cycle.phases.find((item) => item.id === phaseId);
+  if (!phase) {
+    return fail("Phase not found", 404);
+  }
+
+  await prisma.phase.delete({ where: { id: phaseId } });
+
+  await prisma.auditLog.create({
+    data: {
+      userId,
+      action: "PHASE_DELETED",
+      metadata: { cycleId: id, phaseId, phaseType: phase.phaseType },
+    },
+  });
+
+  const updated = await prisma.cycleInstance.findUnique({
+    where: { id },
+    include: { phases: true },
+  });
+
+  return ok(updated);
+}
