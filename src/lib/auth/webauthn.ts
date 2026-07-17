@@ -139,21 +139,38 @@ export async function verifyAuthentication(
       : "";
 
   const credentialId = rawId ? Buffer.from(rawId, "base64url") : Buffer.alloc(0);
-  const legacyCredentialId = rawId ? Buffer.from(rawId) : Buffer.alloc(0);
+  const allCredentials = await prisma.passkeyCredential.findMany({
+    where: { userId },
+  });
 
-  const authenticator = await prisma.passkeyCredential.findFirst({
-    where: {
-      userId,
-      OR: [{ credentialId }, { credentialId: legacyCredentialId }],
-    },
+  const authenticator = allCredentials.find((cred) => {
+    const storedBytes = Buffer.from(cred.credentialId);
+    const storedAsBase64Url = storedBytes.toString("base64url");
+    const storedAsUtf8 = storedBytes.toString("utf8");
+
+    if (storedBytes.equals(credentialId)) {
+      return true;
+    }
+
+    if (storedAsBase64Url === rawId || storedAsUtf8 === rawId) {
+      return true;
+    }
+
+    if (!storedAsUtf8) {
+      return false;
+    }
+
+    // Handles credentials that were saved as UTF-8 bytes of a base64url string.
+    const repaired = Buffer.from(storedAsUtf8, "base64url");
+    return repaired.equals(credentialId);
   });
 
   if (!authenticator) {
     throw new Error("Unknown passkey credential");
   }
 
-  // Repair credential IDs saved with older UTF-8 encoding so future lookups are consistent.
-  if (!Buffer.from(authenticator.credentialId).equals(credentialId)) {
+  // Repair credential IDs saved with older encodings so future lookups are consistent.
+  if (!Buffer.from(authenticator.credentialId).equals(credentialId) && credentialId.length > 0) {
     await prisma.passkeyCredential.update({
       where: { id: authenticator.id },
       data: { credentialId },

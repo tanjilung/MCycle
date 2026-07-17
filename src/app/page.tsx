@@ -15,7 +15,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/register"
-              className="rounded-full bg-black px-6 py-3 text-sm font-medium text-white"
+              className="rounded-full bg-sky-200 px-6 py-3 text-sm font-medium text-sky-900"
             >
               Create account
             </Link>

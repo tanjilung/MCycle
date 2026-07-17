@@ -14,7 +14,7 @@ export default function DashboardPage() {
         </p>
         <Link
           href={monthPath}
-          className="mt-4 inline-flex rounded-full bg-black px-4 py-2 text-sm font-medium text-white"
+          className="mt-4 inline-flex rounded-full bg-sky-200 px-4 py-2 text-sm font-medium text-sky-900"
         >
           Open this month calendar
         </Link>
