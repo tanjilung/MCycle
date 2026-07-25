@@ -68,6 +68,7 @@ export function MonthlyCycleCalendar({
 
   const nextOvulation = prediction ? normalize(prediction.nextOvulation) : null;
   const nextMenstruation = prediction ? normalize(prediction.nextMenstruation) : null;
+  const today = normalize(new Date());
 
   async function submitStartDate() {
     if (!selectedDate) {
@@ -120,6 +121,7 @@ export function MonthlyCycleCalendar({
           const isNextOvulation = nextOvulation === dayISO;
           const isNextMenstruation = nextMenstruation === dayISO;
           const isSelected = selectedDate === dayISO;
+          const isToday = today === dayISO;
 
           let colorClass = "bg-white border-zinc-200";
           if (isMenstruation) {
@@ -141,7 +143,7 @@ export function MonthlyCycleCalendar({
                 isSelected ? "ring-2 ring-black" : ""
               }`}
             >
-              <span className="text-sm font-medium">{format(day, "d")}</span>
+              <span className={`text-sm font-medium${isToday ? " text-yellow-500 font-bold" : ""}`}>{format(day, "d")}</span>
             </button>
           );
         })}
