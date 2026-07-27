@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:railway": "prisma generate && next build",
+    "build:railway": "DATABASE_URL=postgresql://build:build@localhost/build prisma generate && next build",
     "start": "next start",
     "start:railway": "prisma generate && prisma migrate deploy && next start -p ${PORT:-3000}",
     "test": "vitest run",
