@@ -126,6 +126,44 @@ If you need to run migration deploy manually in a Railway shell:
 npm run prisma:migrate:deploy
 ```
 
+## Deployment on Coolify
+
+This repo is packaged for Coolify with `nixpacks.toml`.
+
+### 1. Create services
+
+1. Create a PostgreSQL service in Coolify.
+2. Create an application service from this GitHub repo.
+3. Use the Nixpacks build pack.
+4. Attach the PostgreSQL database to the application.
+
+### 2. Configure variables in the application
+
+Set these environment variables:
+
+- `DATABASE_URL`: use the PostgreSQL connection string from your Coolify database service
+
+### 3. Build and start behavior
+
+Coolify will pick up these commands from `nixpacks.toml`:
+
+- Build: `npm run build:railway`
+- Start: `npm run start:railway`
+
+`build:railway` runs Prisma client generation during build:
+
+- `prisma generate`
+- `next build`
+
+`start:railway` runs Prisma migrations before boot:
+
+- `prisma migrate deploy`
+- `next start -p ${PORT:-3000}`
+
+### 4. Deploy
+
+Deploy the application from Coolify. The build will install dependencies, generate the Prisma client, apply migrations on startup, and start the Next.js server.
+
 ## Notes
 
 - This app is for tracking support and prediction. It is not medical advice.
