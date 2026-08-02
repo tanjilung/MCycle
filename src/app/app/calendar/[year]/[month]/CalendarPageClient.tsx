@@ -38,6 +38,7 @@ type Props = {
 };
 
 export function CalendarPageClient({ year, month }: Props) {
+  const [managedPersonId, setManagedPersonId] = useState<string | null>(null);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [prediction, setPrediction] = useState<Prediction>(null);
   const [error, setError] = useState<string>("");
@@ -45,8 +46,23 @@ export function CalendarPageClient({ year, month }: Props) {
 
   const monthDate = useMemo(() => parse(`${year}-${month}`, "yyyy-MM", new Date()), [month, year]);
 
+  // Temporary helper: for now, just fetch the first person automatically if available
+  useEffect(() => {
+    (async () => {
+      const resp = await fetch("/api/people");
+      const people = await resp.json();
+      if (people.length > 0) {
+        setManagedPersonId(people[0].id);
+      } else {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   const loadData = useCallback(async () => {
-    const response = await fetch(`/api/cycles?month=${year}-${month}`);
+    if (!managedPersonId) return;
+
+    const response = await fetch(`/api/cycles?month=${year}-${month}&managedPersonId=${managedPersonId}`);
     const data = (await response.json()) as CyclesResponse;
 
     if (!response.ok || !data.ok || !data.data) {
@@ -58,60 +74,38 @@ export function CalendarPageClient({ year, month }: Props) {
     setCycles(data.data.cycles);
     setPrediction(data.data.prediction);
     setLoading(false);
-  }, [month, year]);
+  }, [month, year, managedPersonId]);
 
   useEffect(() => {
-    let active = true;
-
-    (async () => {
-      const response = await fetch(`/api/cycles?month=${year}-${month}`);
-      const data = (await response.json()) as CyclesResponse;
-
-      if (!active) {
-        return;
-      }
-
-      if (!response.ok || !data.ok || !data.data) {
-        setError(data.error ?? "Could not load cycle data");
-        setLoading(false);
-        return;
-      }
-
-      setError("");
-      setCycles(data.data.cycles);
-      setPrediction(data.data.prediction);
-      setLoading(false);
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [month, year]);
+    if (managedPersonId) {
+      loadData();
+    }
+  }, [loadData, managedPersonId]);
 
   const monthCycle = useMemo(() => {
     const [y, m] = [`${year}`, `${month}`];
     return cycles.find((c) => {
-      const d = c.menstruationStartDate.slice(0, 7); // "yyyy-MM"
+      const d = c.menstruationStartDate.slice(0, 7);
       return d === `${y}-${m}`;
     }) ?? null;
   }, [cycles, year, month]);
 
   async function onSetStartDate(dateISO: string) {
+    if (!managedPersonId) return;
+    
     let response: Response;
 
     if (monthCycle) {
-      // Update existing cycle's menstruation start date
       response = await fetch(`/api/cycles/${monthCycle.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ menstruationStartDate: dateISO }),
       });
     } else {
-      // Create new cycle
       response = await fetch("/api/cycles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ menstruationStartDate: dateISO }),
+        body: JSON.stringify({ managedPersonId, menstruationStartDate: dateISO }),
       });
     }
 

@@ -44,6 +44,12 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
+  },
+  "allowScripts": {
+    "@prisma/client@6.15.0": true,
+    "@prisma/engines@6.15.0": true,
+    "prisma@6.15.0": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
   }
 }
-

@@ -10,9 +10,20 @@ const links = [
   { href: "/app/settings", label: "Settings" },
 ];
 
+import { ManagedPersonSwitcher } from "@/components/ManagedPersonSwitcher";
+
+// ... inside AppNav component
+
 export function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const [managedPersonId, setManagedPersonId] = useState<string | null>(null);
+
+  // Simple state management for now
+  useEffect(() => {
+    // In a real app, you'd probably use a Context or Zustand store here
+    // to persist the selection across pages
+  }, [managedPersonId]);
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -22,7 +33,14 @@ export function AppNav() {
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/10 bg-white/80 p-3 shadow-sm backdrop-blur">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <ManagedPersonSwitcher 
+          currentId={managedPersonId} 
+          onChange={(id) => {
+            setManagedPersonId(id);
+            // In a production app, update URL params or context here
+          }} 
+        />
         {links.map((link) => {
           const active = pathname.startsWith(link.href);
           return (

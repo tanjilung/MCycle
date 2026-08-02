@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description: "Menstrual cycle tracking with secure login and monthly predictions",
 };
 
+import { PersonProvider } from "@/lib/context/PersonContext";
+
+// ...
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,7 +32,9 @@ export default function RootLayout({
       lang="en"
       className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <PersonProvider>{children}</PersonProvider>
+      </body>
     </html>
   );
 }

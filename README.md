@@ -2,6 +2,7 @@
 
 Menstrual cycle tracking web app with:
 - Account registration and login
+- **Multi-person cycle tracking support**
 - Persistent PostgreSQL storage
 - Monthly calendar view
 - Editable cycle defaults
@@ -78,6 +79,7 @@ npm run test:e2e
 
 ## API Highlights
 
+- `GET/POST /api/people`: manage multiple person profiles
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `GET/PATCH /api/cycle-defaults`

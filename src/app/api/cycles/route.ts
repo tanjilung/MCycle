@@ -30,11 +30,16 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const managedPersonId = searchParams.get("managedPersonId");
   const { month } = getMonthRange(searchParams.get("month"));
+
+  if (!managedPersonId) {
+    return fail("managedPersonId is required", 400);
+  }
 
   const cycles = await prisma.cycleInstance.findMany({
     where: {
-      userId,
+      managedPersonId,
     },
     include: {
       phases: true,
@@ -45,7 +50,7 @@ export async function GET(request: Request) {
   });
 
   const latest = cycles[0];
-  const defaults = await prisma.cycleDefaults.findUnique({ where: { userId } });
+  const defaults = await prisma.cycleDefaults.findUnique({ where: { managedPersonId } });
 
   let prediction: { nextOvulation: string; nextMenstruation: string } | null = null;
   if (latest && defaults) {
@@ -53,7 +58,6 @@ export async function GET(request: Request) {
     const ovulationPhase = latest.phases.find((p) => p.phaseType === "OVULATION");
 
     if (lutealPhase && ovulationPhase) {
-      // Use actual edited phase dates so edits are reflected immediately
       const nextMenstruationDate = new Date(lutealPhase.endDate);
       nextMenstruationDate.setUTCDate(nextMenstruationDate.getUTCDate() + 1);
       prediction = {
@@ -61,7 +65,6 @@ export async function GET(request: Request) {
         nextMenstruation: nextMenstruationDate.toISOString(),
       };
     } else {
-      // Fallback: calculate from defaults
       const calc = calculateCyclePrediction(latest.menstruationStartDate, {
         cycleLengthDays: defaults.cycleLengthDays,
         menstruationDays: defaults.menstruationDays,
@@ -93,10 +96,15 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return fail("Invalid cycle payload", 400);
   }
+  
+  const { managedPersonId, menstruationStartDate: msDateStr, notes } = body;
+  if (!managedPersonId) {
+    return fail("managedPersonId is required", 400);
+  }
 
-  const defaults = await prisma.cycleDefaults.findUnique({ where: { userId } });
+  const defaults = await prisma.cycleDefaults.findUnique({ where: { managedPersonId } });
   if (!defaults) {
-    return fail("Cycle defaults are missing", 404);
+    return fail("Cycle defaults are missing for this person", 404);
   }
 
   if (
@@ -106,13 +114,13 @@ export async function POST(request: Request) {
     return fail("Defaults are invalid. Adjust phase lengths first", 400);
   }
 
-  const menstruationStartDate = parseDateInput(parsed.data.menstruationStartDate);
+  const menstruationStartDate = parseDateInput(msDateStr);
 
   const monthStart = startOfMonth(menstruationStartDate);
   const monthEnd = endOfMonth(menstruationStartDate);
   const existing = await prisma.cycleInstance.findFirst({
     where: {
-      userId,
+      managedPersonId,
       menstruationStartDate: { gte: monthStart, lte: monthEnd },
     },
   });
@@ -129,13 +137,13 @@ export async function POST(request: Request) {
 
   const created = await prisma.cycleInstance.create({
     data: {
-      userId,
+      managedPersonId,
       menstruationStartDate,
       cycleLengthDays: defaults.cycleLengthDays,
       menstruationDays: defaults.menstruationDays,
       ovulationDays: defaults.ovulationDays,
       lutealDays: defaults.lutealDays,
-      notes: parsed.data.notes,
+      notes,
       phases: {
         create: prediction.phases.map((phase) => ({
           phaseType: phase.phaseType,
@@ -147,13 +155,15 @@ export async function POST(request: Request) {
     include: { phases: true },
   });
 
+  // Audit log should store user context but be associated with the action
   await prisma.auditLog.create({
     data: {
       userId,
       action: "CYCLE_CREATED",
       metadata: {
+        managedPersonId,
         cycleId: created.id,
-        menstruationStartDate: parsed.data.menstruationStartDate,
+        menstruationStartDate: msDateStr,
       },
     },
   });

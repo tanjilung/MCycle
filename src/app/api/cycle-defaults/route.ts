@@ -10,13 +10,19 @@ const updateSchema = z.object({
   lutealDays: z.number().int().min(7).max(20),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const userId = await getCurrentUserId();
   if (!userId) {
     return fail("Unauthorized", 401);
   }
 
-  const defaults = await prisma.cycleDefaults.findUnique({ where: { userId } });
+  const { searchParams } = new URL(request.url);
+  const managedPersonId = searchParams.get("managedPersonId");
+  if (!managedPersonId) {
+    return fail("managedPersonId is required", 400);
+  }
+
+  const defaults = await prisma.cycleDefaults.findUnique({ where: { managedPersonId } });
   if (!defaults) {
     return fail("Defaults not found", 404);
   }
@@ -36,15 +42,18 @@ export async function PATCH(request: Request) {
     return fail("Invalid defaults payload", 400);
   }
 
-  const { cycleLengthDays, menstruationDays, ovulationDays, lutealDays } = parsed.data;
+  const { managedPersonId, cycleLengthDays, menstruationDays, ovulationDays, lutealDays } = body;
+  if (!managedPersonId) {
+    return fail("managedPersonId is required", 400);
+  }
 
   if (menstruationDays + ovulationDays + lutealDays >= cycleLengthDays) {
     return fail("Phase durations exceed cycle length", 400);
   }
 
   const defaults = await prisma.cycleDefaults.update({
-    where: { userId },
-    data: parsed.data,
+    where: { managedPersonId },
+    data: { cycleLengthDays, menstruationDays, ovulationDays, lutealDays },
   });
 
   await prisma.auditLog.create({
@@ -52,6 +61,7 @@ export async function PATCH(request: Request) {
       userId,
       action: "CYCLE_DEFAULTS_UPDATED",
       metadata: {
+        managedPersonId,
         cycleLengthDays,
         menstruationDays,
         ovulationDays,

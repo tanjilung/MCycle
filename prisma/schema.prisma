@@ -28,6 +28,18 @@ enum AuditAction {
   ACCOUNT_DELETED
 }
 
+model ManagedPerson {
+  id            String          @id @default(cuid())
+  userId        String
+  name          String
+  createdAt     DateTime        @default(now())
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycleDefaults CycleDefaults?
+  cycles        CycleInstance[]
+
+  @@index([userId])
+}
+
 model User {
   id            String           @id @default(cuid())
   email         String           @unique
@@ -37,8 +49,7 @@ model User {
   updatedAt     DateTime         @updatedAt
   sessions      AuthSession[]
   passkeys      PasskeyCredential[]
-  cycleDefaults CycleDefaults?
-  cycles        CycleInstance[]
+  managedPeople ManagedPerson[]
   auditLogs     AuditLog[]
 }
 
@@ -70,19 +81,19 @@ model PasskeyCredential {
 
 model CycleDefaults {
   id               String   @id @default(cuid())
-  userId           String   @unique
+  managedPersonId  String   @unique
   cycleLengthDays  Int      @default(28)
   menstruationDays Int      @default(5)
   ovulationDays    Int      @default(1)
   lutealDays       Int      @default(14)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  managedPerson    ManagedPerson @relation(fields: [managedPersonId], references: [id], onDelete: Cascade)
 }
 
 model CycleInstance {
   id                    String   @id @default(cuid())
-  userId                String
+  managedPersonId       String
   menstruationStartDate DateTime
   cycleLengthDays       Int
   menstruationDays      Int
@@ -91,10 +102,10 @@ model CycleInstance {
   notes                 String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  managedPerson         ManagedPerson @relation(fields: [managedPersonId], references: [id], onDelete: Cascade)
   phases                Phase[]
 
-  @@index([userId, menstruationStartDate])
+  @@index([managedPersonId, menstruationStartDate])
 }
 
 model Phase {
