@@ -20,10 +20,23 @@ const initialDefaults: Defaults = {
 };
 
 export default function CycleDefaultsPage() {
-  const { currentId } = useManagedPerson();
+  const { currentId, setCurrentId } = useManagedPerson();
   const [defaults, setDefaults] = useState<Defaults>(initialDefaults);
   const [message, setMessage] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [people, setPeople] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/people")
+      .then((res) => res.json())
+      .then((data: { id: string; name: string }[]) => {
+        if (cancelled) return;
+        setPeople(data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -114,6 +127,23 @@ export default function CycleDefaultsPage() {
       <p className="text-zinc-700">
         Configure your base cycle. Follicular days are derived from the remaining days in the cycle.
       </p>
+
+      {people.length > 0 && (
+        <label className="text-sm">
+          Managed person
+          <select
+            value={currentId ?? ""}
+            onChange={(e) => setCurrentId(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-black/15 px-3 py-2"
+          >
+            {people.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <form onSubmit={onSubmit} className="grid gap-4">
         <label className="text-sm">
