@@ -41,12 +41,12 @@ model ManagedPerson {
 }
 
 model User {
-  id            String           @id @default(cuid())
-  email         String           @unique
+  id            String              @id @default(cuid())
+  email         String              @unique
   name          String
   passwordHash  String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
   sessions      AuthSession[]
   passkeys      PasskeyCredential[]
   managedPeople ManagedPerson[]
@@ -65,34 +65,34 @@ model AuthSession {
 }
 
 model PasskeyCredential {
-  id            String   @id @default(cuid())
-  userId        String
-  credentialId  Bytes    @unique
-  publicKey     Bytes
-  counter       Int      @default(0)
-  transports    Json?
-  deviceName    String?
-  createdAt     DateTime @default(now())
-  lastUsedAt    DateTime?
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId Bytes     @unique
+  publicKey    Bytes
+  counter      Int       @default(0)
+  transports   Json?
+  deviceName   String?
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model CycleDefaults {
-  id               String   @id @default(cuid())
-  managedPersonId  String   @unique
-  cycleLengthDays  Int      @default(28)
-  menstruationDays Int      @default(5)
-  ovulationDays    Int      @default(1)
-  lutealDays       Int      @default(14)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id               String        @id @default(cuid())
+  managedPersonId  String        @unique
+  cycleLengthDays  Int           @default(28)
+  menstruationDays Int           @default(5)
+  ovulationDays    Int           @default(1)
+  lutealDays       Int           @default(14)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
   managedPerson    ManagedPerson @relation(fields: [managedPersonId], references: [id], onDelete: Cascade)
 }
 
 model CycleInstance {
-  id                    String   @id @default(cuid())
+  id                    String        @id @default(cuid())
   managedPersonId       String
   menstruationStartDate DateTime
   cycleLengthDays       Int
@@ -100,8 +100,8 @@ model CycleInstance {
   ovulationDays         Int
   lutealDays            Int
   notes                 String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
   managedPerson         ManagedPerson @relation(fields: [managedPersonId], references: [id], onDelete: Cascade)
   phases                Phase[]
 
@@ -109,12 +109,12 @@ model CycleInstance {
 }
 
 model Phase {
-  id              String    @id @default(cuid())
+  id              String        @id @default(cuid())
   cycleInstanceId String
   phaseType       PhaseType
   startDate       DateTime
   endDate         DateTime
-  isEdited        Boolean   @default(false)
+  isEdited        Boolean       @default(false)
   notes           String?
   cycleInstance   CycleInstance @relation(fields: [cycleInstanceId], references: [id], onDelete: Cascade)
 
@@ -122,12 +122,12 @@ model Phase {
 }
 
 model AuditLog {
-  id        String     @id @default(cuid())
+  id        String      @id @default(cuid())
   userId    String
   action    AuditAction
   metadata  Json?
-  createdAt DateTime   @default(now())
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
