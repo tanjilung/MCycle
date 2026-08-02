@@ -1,12 +1,14 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useManagedPerson } from "../ManagedPersonProvider";
 
 type Defaults = {
   cycleLengthDays: number;
   menstruationDays: number;
   ovulationDays: number;
   lutealDays: number;
+  managedPersonId: string;
 };
 
 const initialDefaults: Defaults = {
@@ -14,9 +16,11 @@ const initialDefaults: Defaults = {
   menstruationDays: 5,
   ovulationDays: 1,
   lutealDays: 14,
+  managedPersonId: "",
 };
 
 export default function CycleDefaultsPage() {
+  const { currentId } = useManagedPerson();
   const [defaults, setDefaults] = useState<Defaults>(initialDefaults);
   const [message, setMessage] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -24,8 +28,13 @@ export default function CycleDefaultsPage() {
   useEffect(() => {
     let active = true;
 
+    if (!currentId) {
+      if (active) setMessage("Select a person in Settings first");
+      return;
+    }
+
     (async () => {
-      const response = await fetch("/api/cycle-defaults");
+      const response = await fetch(`/api/cycle-defaults?managedPersonId=${encodeURIComponent(currentId)}`);
       const payload = (await response.json()) as {
         ok: boolean;
         data?: Defaults;
@@ -42,21 +51,46 @@ export default function CycleDefaultsPage() {
         return;
       }
 
+      // If no defaults exist yet for this person, create them via PATCH (create-or-update)
+      if (response.status === 404) {
+        const createResp = await fetch("/api/cycle-defaults", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            managedPersonId: currentId,
+            cycleLengthDays: 28,
+            menstruationDays: 5,
+            ovulationDays: 1,
+            lutealDays: 14,
+          }),
+        });
+        const createPayload = (await createResp.json()) as { ok: boolean; data?: Defaults };
+        if (createResp.ok && createPayload.ok && createPayload.data) {
+          setDefaults(createPayload.data);
+          return;
+        }
+      }
+
       setMessage(payload.error ?? "Unable to load defaults");
     })();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [currentId]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const response = await fetch("/api/cycle-defaults", {
+    if (!currentId) {
+      setMessage("Select a person first");
+      return;
+    }
+
+    const response = await fetch(`/api/cycle-defaults?managedPersonId=${encodeURIComponent(currentId)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(defaults),
+      body: JSON.stringify({ ...defaults, managedPersonId: currentId }),
     });
 
     const payload = (await response.json()) as { ok: boolean; error?: string };

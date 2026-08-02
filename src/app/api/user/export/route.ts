@@ -8,16 +8,21 @@ export async function POST() {
     return fail("Unauthorized", 401);
   }
 
+  // Query via managedPeople since User doesn't have direct cycleDefaults/cycles relations.
   const payload = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      cycleDefaults: true,
-      cycles: {
+      managedPeople: {
         include: {
-          phases: true,
-        },
-        orderBy: {
-          menstruationStartDate: "desc",
+          cycleDefaults: true,
+          cycles: {
+            include: {
+              phases: true,
+            },
+            orderBy: {
+              menstruationStartDate: "desc",
+            },
+          },
         },
       },
     },
@@ -27,15 +32,22 @@ export async function POST() {
     return fail("User not found", 404);
   }
 
+  // Flatten cycles across all managed people for the export payload
+  const flattened = {
+    ...payload,
+    cycleDefaults: payload.managedPeople[0]?.cycleDefaults ?? null,
+    cycles: payload.managedPeople.flatMap((mp) => mp.cycles),
+  };
+
   await prisma.auditLog.create({
     data: {
       userId,
       action: "DATA_EXPORTED",
       metadata: {
-        exportedCycles: payload.cycles.length,
+        exportedCycles: flattened.cycles.length,
       },
     },
   });
 
-  return ok(payload);
+  return ok(flattened);
 }

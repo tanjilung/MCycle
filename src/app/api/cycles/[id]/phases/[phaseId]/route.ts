@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/api";
 import { getCurrentUserId } from "@/lib/auth/session";
 import { parseDateInput } from "@/lib/dates";
+import { AuditAction } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -39,10 +40,10 @@ export async function PATCH(
     return fail("Start date must be before end date", 400);
   }
 
-  const cycle = await prisma.cycleInstance.findFirst({
-    where: { id, userId },
-    include: { phases: true },
-  });
+   const cycle = await prisma.cycleInstance.findFirst({
+     where: { id, managedPerson: { userId } },
+     include: { phases: true },
+   });
 
   if (!cycle) {
     return fail("Cycle not found", 404);
@@ -81,7 +82,7 @@ export async function PATCH(
       where: {
         phaseType: phase.phaseType,
         cycleInstance: {
-          userId,
+          managedPerson: { userId },
           menstruationStartDate: {
             gt: cycle.menstruationStartDate,
           },
@@ -145,7 +146,7 @@ export async function DELETE(
   const { id, phaseId } = await context.params;
 
   const cycle = await prisma.cycleInstance.findFirst({
-    where: { id, userId },
+    where: { id, managedPerson: { userId } },
     include: { phases: true },
   });
 
@@ -163,8 +164,7 @@ export async function DELETE(
   await prisma.auditLog.create({
     data: {
       userId,
-      // @ts-ignore – PHASE_DELETED added via migration; regenerate client after deploy
-      action: "PHASE_DELETED",
+      action: AuditAction.PHASE_DELETED,
       metadata: { cycleId: id, phaseId, phaseType: phase.phaseType },
     },
   });

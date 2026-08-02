@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
@@ -8,9 +8,20 @@ export async function GET() {
 
   const people = await prisma.managedPerson.findMany({
     where: { userId },
+    orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json(people);
+  // Set default as cookie
+  const defaultId = people[0]?.id ?? null;
+  const res = NextResponse.json(people);
+  if (defaultId) {
+    res.cookies.set("managedPersonId", defaultId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+  }
+  return res;
 }
 
 export async function POST(request: Request) {
