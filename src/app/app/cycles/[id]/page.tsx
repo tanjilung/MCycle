@@ -15,21 +15,22 @@ export default async function CycleDetailPage({ params }: Props) {
 
   const { id } = await params;
 
-  const [cycle, defaults] = await Promise.all([
-    prisma.cycleInstance.findFirst({
-      where: { id, userId },
-      include: { phases: true },
-    }),
-    prisma.cycleDefaults.findUnique({ where: { userId } }),
-  ]);
+  const cycle = await prisma.cycleInstance.findFirst({
+    where: { id },
+    include: { phases: true, managedPerson: true },
+  });
 
   if (!cycle) {
     notFound();
   }
 
+  const defaults = await prisma.cycleDefaults.findUnique({
+    where: { managedPersonId: cycle.managedPersonId },
+  });
+
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-semibold">Cycle Detail</h2>
+      <h2 className="text-2xl font-semibold">Cycle Detail for {cycle.managedPerson.name}</h2>
       <p className="text-zinc-700">Start date: {cycle.menstruationStartDate.toISOString().slice(0, 10)}</p>
       <CycleDetailClient
         initialCycle={{
