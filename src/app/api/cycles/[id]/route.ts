@@ -20,8 +20,11 @@ export async function GET(
   }
 
   const { id } = await context.params;
-  const cycle = await prisma.cycleInstance.findFirst({
-    where: { id, userId },
+  const cycle = await prisma.cycleInstance.findFirst({ 
+    where: { 
+      id, 
+      managedPerson: { userId } 
+    },
     include: { phases: true },
   });
 

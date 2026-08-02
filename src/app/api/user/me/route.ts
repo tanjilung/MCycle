@@ -20,11 +20,6 @@ export async function GET() {
           cycleDefaults: true,
         },
       },
-      _count: {
-        select: {
-          managedPeople: true,
-        },
-      },
     },
   });
 
