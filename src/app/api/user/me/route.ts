@@ -15,10 +15,14 @@ export async function GET() {
       email: true,
       name: true,
       createdAt: true,
-      cycleDefaults: true,
+      managedPeople: {
+        include: {
+          cycleDefaults: true,
+        },
+      },
       _count: {
         select: {
-          cycles: true,
+          managedPeople: true,
         },
       },
     },

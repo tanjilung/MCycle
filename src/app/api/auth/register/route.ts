@@ -31,12 +31,17 @@ export async function POST(request: Request) {
       email,
       name,
       passwordHash,
-      cycleDefaults: {
+      managedPeople: {
         create: {
-          cycleLengthDays: 28,
-          menstruationDays: 5,
-          ovulationDays: 1,
-          lutealDays: 14,
+          name,
+          cycleDefaults: {
+            create: {
+              cycleLengthDays: 28,
+              menstruationDays: 5,
+              ovulationDays: 1,
+              lutealDays: 14,
+            },
+          },
         },
       },
       auditLogs: {
