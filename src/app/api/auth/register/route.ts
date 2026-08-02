@@ -46,26 +46,23 @@ export async function POST(request: Request) {
       },
     });
 
-    // Only create managed person if one doesn't already exist for this user.
-    const existingPerson = await tx.managedPerson.findFirst({
+    // Create managed person (upsert avoids race conditions on unique userId).
+    await tx.managedPerson.upsert({
       where: { userId: createdUser.id },
-    });
-    if (!existingPerson) {
-      await tx.managedPerson.create({
-        data: {
-          userId: createdUser.id,
-          name,
-          cycleDefaults: {
-            create: {
-              cycleLengthDays: 28,
-              menstruationDays: 5,
-              ovulationDays: 1,
-              lutealDays: 14,
-            },
+      create: {
+        userId: createdUser.id,
+        name,
+        cycleDefaults: {
+          create: {
+            cycleLengthDays: 28,
+            menstruationDays: 5,
+            ovulationDays: 1,
+            lutealDays: 14,
           },
         },
-      });
-    }
+      },
+      update: {},
+    });
 
     return createdUser;
   });
