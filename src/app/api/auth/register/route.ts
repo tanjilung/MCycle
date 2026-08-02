@@ -26,13 +26,34 @@ export async function POST(request: Request) {
 
   const passwordHash = await hashPassword(password);
 
-  const user = await prisma.user.create({
-    data: {
-      email,
-      name,
-      passwordHash,
-      managedPeople: {
-        create: {
+  const user = await prisma.$transaction(async (tx) => {
+    const createdUser = await tx.user.create({
+      data: {
+        email,
+        name,
+        passwordHash,
+        auditLogs: {
+          create: {
+            action: "REGISTER",
+            metadata: { hasPassword: true },
+          },
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    // Only create managed person if one doesn't already exist for this user.
+    const existingPerson = await tx.managedPerson.findFirst({
+      where: { userId: createdUser.id },
+    });
+    if (!existingPerson) {
+      await tx.managedPerson.create({
+        data: {
+          userId: createdUser.id,
           name,
           cycleDefaults: {
             create: {
@@ -43,19 +64,10 @@ export async function POST(request: Request) {
             },
           },
         },
-      },
-      auditLogs: {
-        create: {
-          action: "REGISTER",
-          metadata: { hasPassword: true },
-        },
-      },
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-    },
+      });
+    }
+
+    return createdUser;
   });
 
   return ok(user, { status: 201 });
