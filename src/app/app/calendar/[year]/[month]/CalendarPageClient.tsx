@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format, parse } from "date-fns";
 import { MonthlyCycleCalendar } from "@/components/calendar/MonthlyCycleCalendar";
+import { useManagedPerson } from "@/app/app/ManagedPersonProvider";
 
 type Phase = {
   id: string;
@@ -38,7 +39,7 @@ type Props = {
 };
 
 export function CalendarPageClient({ year, month }: Props) {
-  const [managedPersonId, setManagedPersonId] = useState<string | null>(null);
+  const { currentId: managedPersonId, setCurrentId: setManagedPersonId } = useManagedPerson();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [prediction, setPrediction] = useState<Prediction>(null);
   const [error, setError] = useState<string>("");
@@ -46,8 +47,9 @@ export function CalendarPageClient({ year, month }: Props) {
 
   const monthDate = useMemo(() => parse(`${year}-${month}`, "yyyy-MM", new Date()), [month, year]);
 
-  // Temporary helper: for now, just fetch the first person automatically if available
+  // If no stored selection, fetch the first person automatically
   useEffect(() => {
+    if (managedPersonId) return;
     (async () => {
       const resp = await fetch("/api/people");
       const people = await resp.json();
@@ -57,7 +59,7 @@ export function CalendarPageClient({ year, month }: Props) {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [managedPersonId]);
 
   const loadData = useCallback(async () => {
     if (!managedPersonId) return;

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 const links = [
@@ -12,19 +11,12 @@ const links = [
 ];
 
 import { ManagedPersonSwitcher } from "@/components/ManagedPersonSwitcher";
-
-// ... inside AppNav component
+import { useManagedPerson } from "@/app/app/ManagedPersonProvider";
 
 export function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const [managedPersonId, setManagedPersonId] = useState<string | null>(null);
-
-  // Simple state management for now
-  useEffect(() => {
-    // In a real app, you'd probably use a Context or Zustand store here
-    // to persist the selection across pages
-  }, [managedPersonId]);
+  const { currentId, setCurrentId } = useManagedPerson();
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -36,11 +28,8 @@ export function AppNav() {
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/10 bg-white/80 p-3 shadow-sm backdrop-blur">
       <div className="flex flex-wrap items-center gap-2">
         <ManagedPersonSwitcher 
-          currentId={managedPersonId} 
-          onChange={(id) => {
-            setManagedPersonId(id);
-            // In a production app, update URL params or context here
-          }} 
+          currentId={currentId} 
+          onChange={(id) => setCurrentId(id)} 
         />
         {links.map((link) => {
           const active = pathname.startsWith(link.href);

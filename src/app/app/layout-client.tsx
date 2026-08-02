@@ -6,8 +6,10 @@ import { ManagedPersonProvider } from "./ManagedPersonProvider";
 export default function AppLayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <ManagedPersonProvider>
-      <AppNav />
-      <main className="pb-8">{children}</main>
+      <main className="pb-8">
+        <AppNav />
+        {children}
+      </main>
     </ManagedPersonProvider>
   );
 }
