@@ -46,9 +46,9 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create managed person (upsert avoids race conditions on unique userId).
+    // Create managed person (upsert avoids race conditions on composite unique [userId, name]).
     await tx.managedPerson.upsert({
-      where: { userId: createdUser.id },
+      where: { userId_name: { userId: createdUser.id, name } },
       create: {
         userId: createdUser.id,
         name,

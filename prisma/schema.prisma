@@ -30,12 +30,14 @@ enum AuditAction {
 
 model ManagedPerson {
   id            String          @id @default(cuid())
-  userId        String      @unique
+  userId        String
   name          String
   createdAt     DateTime        @default(now())
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycleDefaults CycleDefaults?
   cycles        CycleInstance[]
+
+  @@unique([userId, name])
 }
 
 model User {

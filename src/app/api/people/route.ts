@@ -29,14 +29,35 @@ export async function POST(request: Request) {
   if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
   const { name } = await request.json();
-  if (!name) return new NextResponse("Name is required", { status: 400 });
-
-  const person = await prisma.managedPerson.create({
-    data: {
-      userId,
-      name,
-    },
+  if (!name) return new Response(JSON.stringify({ error: "Name is required" }), {
+    status: 400,
+    headers: { "Content-Type": "application/json" },
   });
 
-  return NextResponse.json(person);
+  try {
+    const person = await prisma.managedPerson.create({
+      data: {
+        userId,
+        name,
+        cycleDefaults: {
+          create: {
+            cycleLengthDays: 28,
+            menstruationDays: 5,
+            ovulationDays: 1,
+            lutealDays: 14,
+          },
+        },
+      },
+    });
+    return NextResponse.json(person, { status: 201 });
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    if (code === "P2002") {
+      return new Response(JSON.stringify({ error: "A person with this name already exists" }), {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    throw err;
+  }
 }
