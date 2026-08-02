@@ -69,6 +69,7 @@ npm run test:e2e
 
 ## Main App Routes
 
+- `/`: landing page with app preview and auth links
 - `/register`: account creation
 - `/login`: account login
 - `/app/dashboard`: authenticated dashboard
@@ -79,13 +80,15 @@ npm run test:e2e
 
 ## API Highlights
 
-- `GET/POST /api/people`: manage multiple person profiles
+- `GET/POST/DELETE /api/people`: manage multiple person profiles (GET and POST at `/api/people`, DELETE at `/api/people/:id`)
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/logout`
 - `GET/PATCH /api/cycle-defaults`
 - `GET/POST /api/cycles`
 - `GET/PATCH/DELETE /api/cycles/:id`
-- `PATCH /api/cycles/:id/phases/:phaseId`
+- `PATCH/DELETE /api/cycles/:id/phases/:phaseId`
+- `GET /api/user/me`
 - `POST /api/user/export`
 - `POST /api/user/delete`
 
