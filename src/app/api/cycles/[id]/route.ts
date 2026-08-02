@@ -3,6 +3,7 @@ import { fail, ok } from "@/lib/api";
 import { getCurrentUserId } from "@/lib/auth/session";
 import { calculateCyclePrediction } from "@/lib/cycle/calculateCycle";
 import { parseDateInput } from "@/lib/dates";
+import { AuditAction } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const updateSchema = z.object({
@@ -119,8 +120,7 @@ export async function DELETE(
   await prisma.auditLog.create({
     data: {
       userId,
-      // @ts-ignore – CYCLE_DELETED added via migration; regenerate client after deploy
-      action: "CYCLE_DELETED",
+      action: AuditAction.CYCLE_DELETED,
       metadata: { cycleId: id },
     },
   });

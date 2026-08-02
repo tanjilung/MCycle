@@ -3,6 +3,7 @@ import { z } from "zod";
 import { fail, ok } from "@/lib/api";
 import { getCurrentUserId } from "@/lib/auth/session";
 import { parseDateInput } from "@/lib/dates";
+import { AuditAction } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const schema = z.object({
@@ -163,8 +164,7 @@ export async function DELETE(
   await prisma.auditLog.create({
     data: {
       userId,
-      // @ts-ignore – PHASE_DELETED added via migration; regenerate client after deploy
-      action: "PHASE_DELETED",
+      action: AuditAction.PHASE_DELETED,
       metadata: { cycleId: id, phaseId, phaseType: phase.phaseType },
     },
   });
