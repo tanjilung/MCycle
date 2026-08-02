@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { AppNav } from "@/components/AppNav";
 import { getCurrentUserId } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
+import AppLayoutClient from "./layout-client";
 
 export default async function AppLayout({
   children,
@@ -25,8 +25,7 @@ export default async function AppLayout({
           Signed in as {user?.name ?? "User"} ({user?.email ?? ""})
         </p>
       </header>
-      <AppNav />
-      <main className="pb-8">{children}</main>
+      <AppLayoutClient>{children}</AppLayoutClient>
     </div>
   );
 }
