@@ -30,6 +30,7 @@ export function AppNav() {
         <ManagedPersonSwitcher 
           currentId={currentId} 
           onChange={(id) => setCurrentId(id)} 
+          hideRemove={true}
         />
         {links.map((link) => {
           const active = pathname.startsWith(link.href);

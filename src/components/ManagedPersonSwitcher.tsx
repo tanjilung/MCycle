@@ -9,9 +9,11 @@ const STORAGE_KEY = "mcycle:selected_managed_person_id";
 export function ManagedPersonSwitcher({
   currentId,
   onChange,
+  hideRemove = false,
 }: {
   currentId: string | null;
   onChange: (id: string) => void;
+  hideRemove?: boolean;
 }) {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export function ManagedPersonSwitcher({
           </option>
         ))}
       </select>
-      {people.length > 1 && currentId ? (
+      {!hideRemove && people.length > 1 && currentId ? (
         <button
           type="button"
           onClick={() => handleDelete(currentId)}
